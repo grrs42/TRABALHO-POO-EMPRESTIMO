@@ -6,10 +6,11 @@ class PeopleFinderView:
         os.system('cls||clear')
 
         print('Buscar Aluno \n\n')
-        name = input('Nome do aluno: \n')
+        name = input('Nome completo do aluno: \n')
+        matricula = input('matrícula do aluno: \n')
 
         person_finder_informations = {
             "name": name
         }
 
-        return name
+        return person_finder_informations

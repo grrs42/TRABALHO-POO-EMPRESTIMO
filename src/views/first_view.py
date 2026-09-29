@@ -1,9 +1,6 @@
 def introduction_page():
     message = '''
-        Sistema Cadastral
-        * Cadastrar Pessoa - 1
-        *Buscar Pessoa por Nome - 2 
-        * Sair - 5
+        aaaa teste
         '''
     print (message)
     command = input('Comando: ')

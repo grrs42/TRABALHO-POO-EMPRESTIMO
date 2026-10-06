@@ -13,13 +13,13 @@ class PeopleRegisterController():
     def _validate_fields(self, new_person_informations: Dict) -> None:
         if not new_person_informations["name"].replace(" ", "").isalpha():
 
-            raise Exception('Campo de nome incorreto!')
+            raise Exception(' Campo de nome incorreto!')
         try: int (new_person_informations["matricula"])
-        except: raise Exception('Campo de matrícula incorreto!') 
+        except: raise Exception(' Campo de matrícula incorreto!') 
     def __format_response(self, new_person_informations: Dict) -> Dict:
         return {
             "count": 1,
-            "type": "Person",
+            "type": "Pessoa",
             "attributes": new_person_informations
         }
         

@@ -14,10 +14,10 @@ class PeopleRegisterView:
     def register_person_sucess(self, message: Dict) -> None:
         os.system('cls||clear')
         sucess_message = f''' 
-            Usuario cadastrado com sucesso!
+            Usuário cadastrado com sucesso!
             Tipo: {message["type"]}
             Registros: { message["count"]}
-            Infos:
+            Informações:
                 Nome: {message["attributes"] ["name"]}
                 Matricula: { message["attributes"] ["matricula"]}
         '''

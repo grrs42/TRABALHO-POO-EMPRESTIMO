@@ -1,15 +1,34 @@
 import os
 from typing import Dict
 
-class TipoMaterialRegisterView:
+class TipoMaterialRegisterView:    
     def register_tipo_view(self) -> Dict:
+        """Recebe os dados para cadastrar um tipo de material."""
+
         os.system('cls||clear')
-        print('Registrar Tipo de Material \n\n')
-        nome = input('Nome do novo tipo (ex: Calculadora): \n')
-        new_tipo_informations = {
-            "nome": nome
+        print('Registrar Tipo de Material\n')
+        nome = input('Nome do novo tipo (ex: Calculadora):\n')
+        
+        print('\nEspecializações disponíveis:')
+        print('  CALCULADORA')
+        print('  JALECO')
+        print('  LIVRO')
+        print('  OUTRO')
+
+        especializacao = input(
+            '\nInforme a especialização '
+            '(Enter para OUTRO):\n'
+        ).strip().upper()
+
+        if not especializacao:
+            especializacao = "OUTRO"
+
+        return {
+            "nome": nome,
+            "especializacao": especializacao
         }
-        return new_tipo_informations
+    
+
     def register_tipo_sucess(self, message: Dict) -> None:
         os.system('cls||clear')
         sucess_message = f'''
@@ -19,6 +38,7 @@ class TipoMaterialRegisterView:
             Informações:
                 Nome: {message["attributes"] ["nome"]}
                 Sigla: {message["attributes"] ["sigla"]}
+                Especialização: {message["attributes"]["especializacao"]}
         '''
         print(sucess_message)
     def register_tipo_error(self, error:str) -> None:

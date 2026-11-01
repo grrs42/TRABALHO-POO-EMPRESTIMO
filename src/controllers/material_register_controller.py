@@ -3,6 +3,7 @@ from src.models.entities.material import Material
 from src.models.repositories.materiais_repository import MateriaisRepository
 from src.models.repositories.tipos_material_repository import TiposMaterialRepository
 from src.models.repositories.grupos_responsaveis_repository import GruposResponsaveisRepository
+from src.models.factories.material_factory import MaterialFactory
 
 class MaterialRegisterController():
     def __init__(
@@ -32,8 +33,15 @@ class MaterialRegisterController():
                 raise Exception(' Tipo de material não encontrado!')
             grupo = self.__grupos_repository.select_grupo(new_material_informations["grupo"].upper())
             if grupo is None:
-                raise Exception(' Grêmio/laboratório não encontrado!')
-            material = Material(tipo, grupo)
+                raise Exception(' Grêmio/laboratório não encontrado!')            
+            material = MaterialFactory.criar(
+                tipo=tipo,
+                grupo=grupo,
+                dados_especificos=new_material_informations[
+                    "dados_especificos"
+                ],
+                marca=new_material_informations.get("marca")
+            )
             saved_material = self.__materiais_repository.insert_material(material)
             response = self.__format_response(saved_material)
             return { "success": True, "message": response}

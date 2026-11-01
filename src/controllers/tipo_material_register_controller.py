@@ -8,8 +8,14 @@ class TipoMaterialRegisterController():
     def register(self, new_tipo_informations: Dict) -> Dict:
         try:
             self._validate_fields(new_tipo_informations)
-            nome = new_tipo_informations["nome"].strip()
-            tipo = TipoMaterial(TipoMaterial.gerar_sigla(nome), nome)
+            nome = new_tipo_informations["nome"].strip()            
+            tipo = TipoMaterial(
+                sigla=TipoMaterial.gerar_sigla(nome),
+                nome=nome,
+                especializacao=new_tipo_informations.get(
+                    "especializacao", "OUTRO"
+                )
+            )
             if len(tipo.sigla) < 3:
                 raise Exception(' O nome do tipo precisa ter pelo menos 3 letras!')
             existente = self.__repository.select_tipo(tipo.sigla)

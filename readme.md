@@ -6,6 +6,7 @@ Projeto desenvolvido para a disciplina de Programação Orientada a Objetos.
 
 **Instituição:** Universidade Federal de Minas Gerais (UFMG)  
 **Professora:** Luiza Bernardes Real 
+
 **Alunos:** Gabriel dos Reis, Mariana Moreno e Samara Cordeiro
 
 ## Objetivo

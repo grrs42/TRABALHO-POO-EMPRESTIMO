@@ -8,7 +8,6 @@ Projeto desenvolvido para a disciplina de Programação Orientada a Objetos.
 **Professora:** Luiza Bernardes Real 
 **Alunos:** Gabriel dos Reis, Mariana Moreno e Samara Cordeiro
 
-
 ## Objetivo
 
 Organizar o cadastro e a consulta de materiais acadêmicos disponibilizados por grêmios, laboratórios e outros grupos responsáveis.

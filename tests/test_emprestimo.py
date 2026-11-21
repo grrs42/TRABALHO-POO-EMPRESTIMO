@@ -13,7 +13,7 @@ class TestEmprestimo(unittest.TestCase):
         self.usuario = Usuario("20260001", "Lucas")
         self.material = Calculadora(
             tipo=TipoMaterial("CAL", "Calculadora", id=1, especializacao="CALCULADORA"),
-            grupo=GrupoResponsavel("GEES", "Grêmio de Engenharia", id=1),
+            grupo=GrupoResponsavel("GEES", "Grêmio de Engenharia de Sistemas", id=1),
             modelo="C-100", codigo="CAL-001", id=1
         )
         self.solicitado_em = datetime(2026, 11, 20, 9, 0)

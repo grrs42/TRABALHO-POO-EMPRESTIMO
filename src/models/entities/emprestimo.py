@@ -1,4 +1,5 @@
 from datetime import date, datetime, timedelta
+from decimal import Decimal
 from enum import Enum
 
 from src.models.entities.material import Material
@@ -11,8 +12,12 @@ class StatusEmprestimo(str, Enum):
     RECUSADO = "RECUSADO"
     DEVOLVIDO = "DEVOLVIDO"
 
+
 class Emprestimo:
     """Representa uma solicitação até a recusa ou devolução de um material por um usuário."""
+
+    # Multa por dia de atraso: R$ 2,00 após o vencimento
+    MULTA_POR_DIA = Decimal("2.00")
 
     def __init__(
         self,
@@ -168,8 +173,37 @@ class Emprestimo:
             and referencia > self.__data_prevista_devolucao
         )
 
+    def dias_atraso(self, data_referencia: date | None = None) -> int:
+        """Conta dias corridos após o vencimento, sem valores negativos.
+
+        Enquanto ATIVO, conta até data_referencia (ou hoje)
+        Quando DEVOLVIDO, usa a data efetiva da devolução e congela o atraso.
+        Solicitações PENDENTES e RECUSADAS não geram atraso.
+        """
+        if data_referencia is not None and type(data_referencia) is not date:
+            raise TypeError("A data de referência deve ser uma data válida.")
+
+        if self.__status not in (StatusEmprestimo.ATIVO, StatusEmprestimo.DEVOLVIDO):
+            return 0
+
+        if self.__status == StatusEmprestimo.DEVOLVIDO:
+            referencia = self.__data_devolucao.date()
+        else:
+            referencia = data_referencia if data_referencia is not None else date.today()
+
+        return max(0, (referencia - self.__data_prevista_devolucao).days)
+
+    def calcular_multa(self, data_referencia: date | None = None) -> Decimal:
+        """Calcula multa de R$ 2,00 por dia corrido.
+
+        Retorna Decimal para evitar imprecisão de ponto flutuante.
+        Não registra pagamento nem efetua cobrança financeira.
+        """
+        return self.MULTA_POR_DIA * self.dias_atraso(data_referencia)
+
     def to_dict(self) -> dict:
         """Fornece os dados do empréstimo sem expor atributos privados."""
+        hoje = date.today()
         return {
             "id": self.__id,
             "matricula_usuario": self.__usuario.matricula,
@@ -185,4 +219,6 @@ class Emprestimo:
             ),
             "data_devolucao": self.__data_devolucao.isoformat() if self.__data_devolucao else None,
             "responsavel_confirmacao": self.__responsavel_confirmacao,
+            "dias_atraso": self.dias_atraso(hoje),
+            "multa_calculada": str(self.calcular_multa(hoje)),
         }

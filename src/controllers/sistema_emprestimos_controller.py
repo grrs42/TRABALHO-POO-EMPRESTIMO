@@ -9,6 +9,7 @@ import re
 
 from src.models.entities.emprestimo import Emprestimo, StatusEmprestimo
 
+
 class SistemaEmprestimosController:
     def __init__(
         self,
@@ -21,7 +22,7 @@ class SistemaEmprestimosController:
         self.__emprestimos_repository = emprestimos_repository
 
     def solicitar_emprestimo(self, dados: dict) -> dict:
-        """Registra solicitação pendente de um estudante para um exemplar"""
+        """Registra solicitação pendente de um estudante para um exemplar."""
         try:
             matricula, codigo = self.__validar_dados_solicitacao(dados)
 
@@ -73,11 +74,11 @@ class SistemaEmprestimosController:
             raise ValueError("Código inválido. Exemplo: CAL-001.")
 
         return matricula, codigo
-      
+
     def aprovar_emprestimo(
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
-        """Confirma a retirada por um grupo autorizado"""
+        """Confirma a retirada por um grupo autorizado."""
         try:
             if not isinstance(dados, dict):
                 raise ValueError("Os dados da aprovação devem ser um dicionário.")
@@ -91,8 +92,7 @@ class SistemaEmprestimosController:
             grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
             self.__verificar_solicitacao_pendente(emprestimo_id, grupo)
 
-            # O repositório deve validar novamente o estado e o grupo dentro
-            # da mesma transação que grava a aprovação, impedindo concorrência
+            # O repositório valida novamente estado e grupo sob transação.
             aprovado = self.__emprestimos_repository.aprovar_solicitacao(
                 emprestimo_id, grupo, prazo_dias
             )
@@ -125,10 +125,36 @@ class SistemaEmprestimosController:
         except Exception:
             return {"success": False, "error": "Não foi possível recusar a solicitação."}
 
+    def registrar_devolucao(
+        self, dados: dict, codigo_grupo_autenticado: str
+    ) -> dict:
+        """Registra devolução de empréstimo ativo por seu grupo responsável.
+
+        A liberação do material e a mudança de estado devem ocorrer juntas na transação.
+        """
+        try:
+            if not isinstance(dados, dict):
+                raise ValueError("Os dados da devolução devem ser um dicionário.")
+
+            emprestimo_id = self.__validar_numero_positivo(
+                dados.get("id_emprestimo"), "ID do empréstimo"
+            )
+            grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
+            self.__verificar_emprestimo_ativo(emprestimo_id, grupo)
+
+            devolvido = self.__emprestimos_repository.registrar_devolucao(
+                emprestimo_id, grupo
+            )
+            return self.__formatar_emprestimo(devolvido)
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível registrar a devolução."}
+
     def __verificar_solicitacao_pendente(
         self, emprestimo_id: int, codigo_grupo: str
     ) -> None:
-        """Faz uma pré-validação; o banco precisará repeti-la sob bloqueio."""
+        """Pré-validação: banco deve repetir as verificações sob bloqueio."""
         emprestimo = self.__emprestimos_repository.select_emprestimo(
             emprestimo_id
         )
@@ -139,6 +165,21 @@ class SistemaEmprestimosController:
             raise PermissionError("Este grupo não pode operar o material informado.")
         if emprestimo.status != StatusEmprestimo.PENDENTE:
             raise ValueError("Somente solicitações pendentes podem ser processadas.")
+
+    def __verificar_emprestimo_ativo(
+        self, emprestimo_id: int, codigo_grupo: str
+    ) -> None:
+        """Pré-validação da devolução; transação deve repetir as verificações."""
+        emprestimo = self.__emprestimos_repository.select_emprestimo(
+            emprestimo_id
+        )
+        if emprestimo is None:
+            raise ValueError("Empréstimo não encontrado.")
+
+        if emprestimo.material.grupo.codigo.upper() != codigo_grupo:
+            raise PermissionError("Este grupo não pode operar o material informado.")
+        if emprestimo.status != StatusEmprestimo.ATIVO:
+            raise ValueError("Somente empréstimos ativos podem ser devolvidos.")
 
     @staticmethod
     def __validar_grupo_autenticado(codigo: str) -> str:
@@ -151,7 +192,7 @@ class SistemaEmprestimosController:
 
     @staticmethod
     def __validar_numero_positivo(valor: object, nome: str) -> int:
-        """Aceita número inteiro ou sua representação textual (entrada do terminal)."""
+        """Aceita número inteiro ou sua representação textual (entrada do terminal)"""
         if type(valor) is int:
             numero = valor
         elif isinstance(valor, str) and re.fullmatch(r"[0-9]+", valor.strip()):

@@ -7,8 +7,7 @@ transacional do EmprestimosRepository.
 
 import re
 
-from src.models.entities.emprestimo import Emprestimo
-
+from src.models.entities.emprestimo import Emprestimo, StatusEmprestimo
 
 class SistemaEmprestimosController:
     def __init__(
@@ -74,3 +73,102 @@ class SistemaEmprestimosController:
             raise ValueError("Código inválido. Exemplo: CAL-001.")
 
         return matricula, codigo
+      
+    def aprovar_emprestimo(
+        self, dados: dict, codigo_grupo_autenticado: str
+    ) -> dict:
+        """Confirma a retirada por um grupo autorizado"""
+        try:
+            if not isinstance(dados, dict):
+                raise ValueError("Os dados da aprovação devem ser um dicionário.")
+
+            emprestimo_id = self.__validar_numero_positivo(
+                dados.get("id_emprestimo"), "ID do empréstimo"
+            )
+            prazo_dias = self.__validar_numero_positivo(
+                dados.get("prazo_dias"), "Prazo em dias"
+            )
+            grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
+            self.__verificar_solicitacao_pendente(emprestimo_id, grupo)
+
+            # O repositório deve validar novamente o estado e o grupo dentro
+            # da mesma transação que grava a aprovação, impedindo concorrência
+            aprovado = self.__emprestimos_repository.aprovar_solicitacao(
+                emprestimo_id, grupo, prazo_dias
+            )
+            return self.__formatar_emprestimo(aprovado)
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível aprovar a solicitação."}
+
+    def recusar_emprestimo(
+        self, dados: dict, codigo_grupo_autenticado: str
+    ) -> dict:
+        """Recusa uma solicitação e solicita a liberação do exemplar."""
+        try:
+            if not isinstance(dados, dict):
+                raise ValueError("Os dados da recusa devem ser um dicionário.")
+
+            emprestimo_id = self.__validar_numero_positivo(
+                dados.get("id_emprestimo"), "ID do empréstimo"
+            )
+            grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
+            self.__verificar_solicitacao_pendente(emprestimo_id, grupo)
+
+            recusado = self.__emprestimos_repository.recusar_solicitacao(
+                emprestimo_id, grupo
+            )
+            return self.__formatar_emprestimo(recusado)
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível recusar a solicitação."}
+
+    def __verificar_solicitacao_pendente(
+        self, emprestimo_id: int, codigo_grupo: str
+    ) -> None:
+        """Faz uma pré-validação; o banco precisará repeti-la sob bloqueio."""
+        emprestimo = self.__emprestimos_repository.select_emprestimo(
+            emprestimo_id
+        )
+        if emprestimo is None:
+            raise ValueError("Empréstimo não encontrado.")
+
+        if emprestimo.material.grupo.codigo.upper() != codigo_grupo:
+            raise PermissionError("Este grupo não pode operar o material informado.")
+        if emprestimo.status != StatusEmprestimo.PENDENTE:
+            raise ValueError("Somente solicitações pendentes podem ser processadas.")
+
+    @staticmethod
+    def __validar_grupo_autenticado(codigo: str) -> str:
+        if not isinstance(codigo, str):
+            raise PermissionError("Conta do grupo responsável não autenticada.")
+        normalizado = codigo.strip().upper()
+        if re.fullmatch(r"[A-Z0-9]+", normalizado) is None:
+            raise PermissionError("Conta do grupo responsável não autenticada.")
+        return normalizado
+
+    @staticmethod
+    def __validar_numero_positivo(valor: object, nome: str) -> int:
+        """Aceita número inteiro ou sua representação textual (entrada do terminal)."""
+        if type(valor) is int:
+            numero = valor
+        elif isinstance(valor, str) and re.fullmatch(r"[0-9]+", valor.strip()):
+            numero = int(valor.strip())
+        else:
+            raise ValueError(f"{nome} deve ser um número inteiro positivo.")
+        if numero <= 0:
+            raise ValueError(f"{nome} deve ser um número inteiro positivo.")
+        return numero
+
+    @staticmethod
+    def __formatar_emprestimo(emprestimo: Emprestimo) -> dict:
+        return {
+            "success": True,
+            "message": {
+                "count": 1,
+                "type": "Empréstimo",
+                "attributes": emprestimo.to_dict(),
+            },
+        }

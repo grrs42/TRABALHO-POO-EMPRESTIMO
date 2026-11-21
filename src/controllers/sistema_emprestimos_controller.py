@@ -1,11 +1,8 @@
 """Coordena as operações do ciclo de empréstimos acadêmicos.
-
-Este primeiro incremento implementa somente a solicitação.
-A reserva do exemplar e a criação do registro são responsabilidade
-transacional do EmprestimosRepository.
 """
 
 import re
+from decimal import Decimal
 
 from src.models.entities.emprestimo import Emprestimo, StatusEmprestimo
 
@@ -129,8 +126,6 @@ class SistemaEmprestimosController:
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
         """Registra devolução de empréstimo ativo por seu grupo responsável.
-
-        A liberação do material e a mudança de estado devem ocorrer juntas na transação.
         """
         try:
             if not isinstance(dados, dict):
@@ -150,6 +145,159 @@ class SistemaEmprestimosController:
             return {"success": False, "error": str(erro)}
         except Exception:
             return {"success": False, "error": "Não foi possível registrar a devolução."}
+
+    def consultar_emprestimo(
+        self,
+        dados: dict,
+        matricula_autenticada: str | None = None,
+        codigo_grupo_autenticado: str | None = None,
+    ) -> dict:
+        """Consulta um registro somente se pertencer à conta autenticada.
+        """
+        try:
+            contexto = self.__validar_contexto_consulta(
+                matricula_autenticada, codigo_grupo_autenticado
+            )
+            if not isinstance(dados, dict):
+                raise ValueError("Informe os dados da consulta.")
+            emprestimo_id = self.__validar_numero_positivo(
+                dados.get("id_emprestimo"), "ID do empréstimo"
+            )
+            emprestimo = self.__emprestimos_repository.select_emprestimo(
+                emprestimo_id
+            )
+            # Mesmo retorno para ID inexistente e acesso não autorizado:
+            # evita revelar a existência de empréstimos de outras pessoas.
+            if emprestimo is None or not self.__pertence_ao_contexto(
+                emprestimo, contexto
+            ):
+                raise ValueError("Empréstimo não encontrado ou acesso não autorizado.")
+            return self.__formatar_emprestimo(emprestimo)
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível consultar o empréstimo."}
+
+    def listar_emprestimos_usuario(self, matricula_autenticada: str) -> dict:
+        """Lista o histórico do estudante autenticado, incluindo devoluções."""
+        try:
+            matricula = self.__validar_matricula_autenticada(matricula_autenticada)
+            emprestimos = self.__emprestimos_repository.list_emprestimos_usuario(
+                matricula
+            )
+            self.__validar_lista_usuario(emprestimos, matricula)
+            return self.__formatar_lista_emprestimos(emprestimos, "Empréstimos")
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível listar os empréstimos."}
+
+    def listar_solicitacoes_pendentes(
+        self, codigo_grupo_autenticado: str
+    ) -> dict:
+        """Lista somente solicitações pendentes do grupo autenticado."""
+        try:
+            grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
+            emprestimos = self.__emprestimos_repository.list_emprestimos_pendentes(
+                grupo
+            )
+            self.__validar_lista_emprestimos(emprestimos)
+            if any(
+                item.material.grupo.codigo.upper() != grupo
+                or item.status != StatusEmprestimo.PENDENTE
+                for item in emprestimos
+            ):
+                # Não expor dados de outros grupos se a consulta SQL estiver errada.
+                raise RuntimeError("Resultado inconsistente na consulta de pendências.")
+            return self.__formatar_lista_emprestimos(emprestimos, "Solicitações pendentes")
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível listar as solicitações."}
+
+    def listar_pendencias_usuario(self, matricula_autenticada: str) -> dict:
+        """Lista multas simuladas calculadas para o estudante autenticado.
+
+        Inclui empréstimos ativos atrasados e devolvidos com atraso. O projeto
+        ainda não registra pagamento nem considera a multa quitada.
+        """
+        try:
+            matricula = self.__validar_matricula_autenticada(matricula_autenticada)
+            emprestimos = self.__emprestimos_repository.list_emprestimos_usuario(
+                matricula
+            )
+            self.__validar_lista_usuario(emprestimos, matricula)
+            pendencias = [
+                item for item in emprestimos if item.calcular_multa() > 0
+            ]
+            total = sum(
+                (item.calcular_multa() for item in pendencias), Decimal("0.00")
+            )
+            resposta = self.__formatar_lista_emprestimos(pendencias, "Pendências")
+            resposta["message"]["total_multa_calculada"] = str(total)
+            return resposta
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível consultar as pendências."}
+
+    @staticmethod
+    def __validar_matricula_autenticada(matricula: str) -> str:
+        if not isinstance(matricula, str):
+            raise PermissionError("Conta de estudante não autenticada.")
+        normalizada = matricula.strip()
+        if re.fullmatch(r"[0-9]{10}", normalizada) is None:
+            raise PermissionError("Conta de estudante não autenticada.")
+        return normalizada
+
+    @classmethod
+    def __validar_contexto_consulta(
+        cls,
+        matricula: str | None,
+        codigo_grupo: str | None,
+    ) -> tuple[str, str]:
+        if (matricula is None) == (codigo_grupo is None):
+            raise PermissionError("Informe exatamente uma conta autenticada para consulta.")
+        if matricula is not None:
+            return ("usuario", cls.__validar_matricula_autenticada(matricula))
+        return ("grupo", cls.__validar_grupo_autenticado(codigo_grupo))
+
+    @staticmethod
+    def __pertence_ao_contexto(
+        emprestimo: Emprestimo, contexto: tuple[str, str]
+    ) -> bool:
+        if not isinstance(emprestimo, Emprestimo):
+            return False
+        tipo, codigo = contexto
+        if tipo == "usuario":
+            return emprestimo.usuario.matricula == codigo
+        return emprestimo.material.grupo.codigo.upper() == codigo
+
+    @staticmethod
+    def __validar_lista_emprestimos(emprestimos: list) -> None:
+        if not isinstance(emprestimos, list) or any(
+            not isinstance(item, Emprestimo) for item in emprestimos
+        ):
+            raise RuntimeError("O repositório retornou uma lista inválida.")
+
+    @classmethod
+    def __validar_lista_usuario(cls, emprestimos: list, matricula: str) -> None:
+        cls.__validar_lista_emprestimos(emprestimos)
+        if any(item.usuario.matricula != matricula for item in emprestimos):
+            raise RuntimeError("O repositório retornou dados de outro estudante.")
+
+    @staticmethod
+    def __formatar_lista_emprestimos(
+        emprestimos: list[Emprestimo], tipo: str
+    ) -> dict:
+        return {
+            "success": True,
+            "message": {
+                "count": len(emprestimos),
+                "type": tipo,
+                "attributes": [item.to_dict() for item in emprestimos],
+            },
+        }
 
     def __verificar_solicitacao_pendente(
         self, emprestimo_id: int, codigo_grupo: str
@@ -192,7 +340,6 @@ class SistemaEmprestimosController:
 
     @staticmethod
     def __validar_numero_positivo(valor: object, nome: str) -> int:
-        """Aceita número inteiro ou sua representação textual (entrada do terminal)"""
         if type(valor) is int:
             numero = valor
         elif isinstance(valor, str) and re.fullmatch(r"[0-9]+", valor.strip()):

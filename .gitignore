@@ -3,3 +3,4 @@ venv/
 .venv/
 .env
 myenv/
+avisos_simulados.log

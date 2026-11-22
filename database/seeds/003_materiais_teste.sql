@@ -1,6 +1,3 @@
--- Exemplares fictícios para demonstração do protótipo.
--- Executar após os seeds de grupos e tipos.
-
 INSERT INTO public.materiais (
     codigo,
     numero,

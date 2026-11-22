@@ -25,7 +25,6 @@ class MaterialFinderView:
         '''
         print(sucess_message)
         
-        # Exibe os atributos comuns e específicos do material.
         attributes = message["attributes"]
         campos = {
             "marca": "Marca",

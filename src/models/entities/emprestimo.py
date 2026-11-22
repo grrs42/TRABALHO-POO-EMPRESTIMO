@@ -14,9 +14,6 @@ class StatusEmprestimo(str, Enum):
 
 
 class Emprestimo:
-    """Representa uma solicitação até a recusa ou devolução de um material por um usuário."""
-
-    # Multa por dia de atraso: R$ 2,00 após o vencimento
     MULTA_POR_DIA = Decimal("2.00")
 
     def __init__(
@@ -127,7 +124,6 @@ class Emprestimo:
         responsavel: str,
         data_confirmacao: datetime | None = None,
     ) -> None:
-        """Confirma uma solicitação pendente e define a data de vencimento."""
         if self.__status != StatusEmprestimo.PENDENTE:
             raise ValueError("Somente solicitações pendentes podem ser aprovadas.")
         if type(prazo_dias) is not int or prazo_dias <= 0:
@@ -146,13 +142,11 @@ class Emprestimo:
         self.__status = StatusEmprestimo.ATIVO
 
     def recusar(self) -> None:
-        """Encerra uma solicitação ainda pendente."""
         if self.__status != StatusEmprestimo.PENDENTE:
             raise ValueError("Somente solicitações pendentes podem ser recusadas.")
         self.__status = StatusEmprestimo.RECUSADO
 
     def registrar_devolucao(self, data_devolucao: datetime | None = None) -> None:
-        """Encerra um empréstimo ativo, registrando a devolução."""
         if self.__status != StatusEmprestimo.ATIVO:
             raise ValueError("Somente empréstimos ativos podem ser devolvidos.")
         momento = data_devolucao if data_devolucao is not None else datetime.now()
@@ -164,7 +158,6 @@ class Emprestimo:
         self.__status = StatusEmprestimo.DEVOLVIDO
 
     def esta_atrasado(self, hoje: date | None = None) -> bool:
-        """Indica atraso somente de empréstimos ainda ativos."""
         if hoje is not None and type(hoje) is not date:
             raise TypeError("Informe uma data válida.")
         referencia = hoje if hoje is not None else date.today()
@@ -174,12 +167,6 @@ class Emprestimo:
         )
 
     def dias_atraso(self, data_referencia: date | None = None) -> int:
-        """Conta dias corridos após o vencimento, sem valores negativos.
-
-        Enquanto ATIVO, conta até data_referencia (ou hoje)
-        Quando DEVOLVIDO, usa a data efetiva da devolução e congela o atraso.
-        Solicitações PENDENTES e RECUSADAS não geram atraso.
-        """
         if data_referencia is not None and type(data_referencia) is not date:
             raise TypeError("A data de referência deve ser uma data válida.")
 
@@ -194,15 +181,9 @@ class Emprestimo:
         return max(0, (referencia - self.__data_prevista_devolucao).days)
 
     def calcular_multa(self, data_referencia: date | None = None) -> Decimal:
-        """Calcula multa de R$ 2,00 por dia corrido.
-
-        Retorna Decimal para evitar imprecisão de ponto flutuante.
-        Não registra pagamento nem efetua cobrança financeira.
-        """
         return self.MULTA_POR_DIA * self.dias_atraso(data_referencia)
 
     def to_dict(self) -> dict:
-        """Fornece os dados do empréstimo sem expor atributos privados."""
         hoje = date.today()
         return {
             "id": self.__id,

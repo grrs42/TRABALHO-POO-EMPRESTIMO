@@ -8,8 +8,6 @@ from src.models.entities.grupo_responsavel import GrupoResponsavel
 
 
 class MaterialFactory:
-    """Cria a classe concreta conforme a especialização do tipo."""
-
     _CLASSES = {
         "JALECO": Jaleco,
         "LIVRO": Livro,
@@ -36,8 +34,6 @@ class MaterialFactory:
         disponivel: bool = True,
         id: int | None = None
     ) -> Material:
-        """Constrói e valida um material especializado."""
-
         especializacao = tipo.especializacao
 
         classe_material = cls._CLASSES.get(especializacao)

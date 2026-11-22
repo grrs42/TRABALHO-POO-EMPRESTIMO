@@ -1,6 +1,3 @@
-"""Coordena as operações do ciclo de empréstimos acadêmicos.
-"""
-
 import re
 from decimal import Decimal
 
@@ -13,13 +10,14 @@ class SistemaEmprestimosController:
         usuarios_repository,
         materiais_repository,
         emprestimos_repository,
+        notificador=None,
     ) -> None:
         self.__usuarios_repository = usuarios_repository
         self.__materiais_repository = materiais_repository
         self.__emprestimos_repository = emprestimos_repository
+        self.__notificador = notificador
 
     def solicitar_emprestimo(self, dados: dict) -> dict:
-        """Registra solicitação pendente de um estudante para um exemplar."""
         try:
             matricula, codigo = self.__validar_dados_solicitacao(dados)
 
@@ -75,7 +73,6 @@ class SistemaEmprestimosController:
     def aprovar_emprestimo(
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
-        """Confirma a retirada por um grupo autorizado."""
         try:
             if not isinstance(dados, dict):
                 raise ValueError("Os dados da aprovação devem ser um dicionário.")
@@ -89,7 +86,6 @@ class SistemaEmprestimosController:
             grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
             self.__verificar_solicitacao_pendente(emprestimo_id, grupo)
 
-            # O repositório valida novamente estado e grupo sob transação.
             aprovado = self.__emprestimos_repository.aprovar_solicitacao(
                 emprestimo_id, grupo, prazo_dias
             )
@@ -102,7 +98,6 @@ class SistemaEmprestimosController:
     def recusar_emprestimo(
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
-        """Recusa uma solicitação e solicita a liberação do exemplar."""
         try:
             if not isinstance(dados, dict):
                 raise ValueError("Os dados da recusa devem ser um dicionário.")
@@ -125,8 +120,6 @@ class SistemaEmprestimosController:
     def registrar_devolucao(
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
-        """Registra devolução de empréstimo ativo por seu grupo responsável.
-        """
         try:
             if not isinstance(dados, dict):
                 raise ValueError("Os dados da devolução devem ser um dicionário.")
@@ -152,8 +145,6 @@ class SistemaEmprestimosController:
         matricula_autenticada: str | None = None,
         codigo_grupo_autenticado: str | None = None,
     ) -> dict:
-        """Consulta um registro somente se pertencer à conta autenticada.
-        """
         try:
             contexto = self.__validar_contexto_consulta(
                 matricula_autenticada, codigo_grupo_autenticado
@@ -166,8 +157,6 @@ class SistemaEmprestimosController:
             emprestimo = self.__emprestimos_repository.select_emprestimo(
                 emprestimo_id
             )
-            # Mesmo retorno para ID inexistente e acesso não autorizado:
-            # evita revelar a existência de empréstimos de outras pessoas.
             if emprestimo is None or not self.__pertence_ao_contexto(
                 emprestimo, contexto
             ):
@@ -179,7 +168,6 @@ class SistemaEmprestimosController:
             return {"success": False, "error": "Não foi possível consultar o empréstimo."}
 
     def listar_emprestimos_usuario(self, matricula_autenticada: str) -> dict:
-        """Lista o histórico do estudante autenticado, incluindo devoluções."""
         try:
             matricula = self.__validar_matricula_autenticada(matricula_autenticada)
             emprestimos = self.__emprestimos_repository.list_emprestimos_usuario(
@@ -195,7 +183,6 @@ class SistemaEmprestimosController:
     def listar_solicitacoes_pendentes(
         self, codigo_grupo_autenticado: str
     ) -> dict:
-        """Lista somente solicitações pendentes do grupo autenticado."""
         try:
             grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
             emprestimos = self.__emprestimos_repository.list_emprestimos_pendentes(
@@ -207,7 +194,6 @@ class SistemaEmprestimosController:
                 or item.status != StatusEmprestimo.PENDENTE
                 for item in emprestimos
             ):
-                # Não expor dados de outros grupos se a consulta SQL estiver errada.
                 raise RuntimeError("Resultado inconsistente na consulta de pendências.")
             return self.__formatar_lista_emprestimos(emprestimos, "Solicitações pendentes")
         except (ValueError, TypeError, PermissionError) as erro:
@@ -215,12 +201,45 @@ class SistemaEmprestimosController:
         except Exception:
             return {"success": False, "error": "Não foi possível listar as solicitações."}
 
-    def listar_pendencias_usuario(self, matricula_autenticada: str) -> dict:
-        """Lista multas simuladas calculadas para o estudante autenticado.
+    def listar_emprestimos_ativos(self, codigo_grupo_autenticado: str) -> dict:
+        try:
+            grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
+            emprestimos = self.__listar_ativos_do_grupo(grupo)
+            return self.__formatar_lista_emprestimos(emprestimos, "Empréstimos ativos")
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível listar os empréstimos ativos."}
 
-        Inclui empréstimos ativos atrasados e devolvidos com atraso. O projeto
-        ainda não registra pagamento nem considera a multa quitada.
-        """
+    def gerar_avisos_atraso(self, codigo_grupo_autenticado: str) -> dict:
+        try:
+            grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
+            if self.__notificador is None:
+                raise ValueError("Serviço de avisos não configurado.")
+            atrasados = [
+                item for item in self.__listar_ativos_do_grupo(grupo)
+                if item.esta_atrasado()
+            ]
+            for item in atrasados:
+                self.__notificador.enviar_aviso_atraso(item)
+            return self.__formatar_lista_emprestimos(atrasados, "Avisos de atraso simulados")
+        except (ValueError, TypeError, PermissionError) as erro:
+            return {"success": False, "error": str(erro)}
+        except Exception:
+            return {"success": False, "error": "Não foi possível gerar os avisos."}
+
+    def __listar_ativos_do_grupo(self, grupo: str) -> list:
+        emprestimos = self.__emprestimos_repository.list_emprestimos_ativos(grupo)
+        self.__validar_lista_emprestimos(emprestimos)
+        if any(
+            item.material.grupo.codigo.upper() != grupo
+            or item.status != StatusEmprestimo.ATIVO
+            for item in emprestimos
+        ):
+            raise RuntimeError("Resultado inconsistente na consulta de ativos.")
+        return emprestimos
+
+    def listar_pendencias_usuario(self, matricula_autenticada: str) -> dict:
         try:
             matricula = self.__validar_matricula_autenticada(matricula_autenticada)
             emprestimos = self.__emprestimos_repository.list_emprestimos_usuario(
@@ -302,7 +321,6 @@ class SistemaEmprestimosController:
     def __verificar_solicitacao_pendente(
         self, emprestimo_id: int, codigo_grupo: str
     ) -> None:
-        """Pré-validação: banco deve repetir as verificações sob bloqueio."""
         emprestimo = self.__emprestimos_repository.select_emprestimo(
             emprestimo_id
         )
@@ -317,7 +335,6 @@ class SistemaEmprestimosController:
     def __verificar_emprestimo_ativo(
         self, emprestimo_id: int, codigo_grupo: str
     ) -> None:
-        """Pré-validação da devolução; transação deve repetir as verificações."""
         emprestimo = self.__emprestimos_repository.select_emprestimo(
             emprestimo_id
         )

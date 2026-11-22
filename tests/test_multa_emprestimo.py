@@ -1,5 +1,3 @@
-"""Testes das regras de atraso e multa sem dependência do banco de dados."""
-
 import unittest
 from datetime import date, datetime
 from decimal import Decimal
@@ -67,7 +65,6 @@ class TestMultaEmprestimo(unittest.TestCase):
         self.assertEqual(self.emprestimo.status, StatusEmprestimo.DEVOLVIDO)
         self.assertEqual(self.emprestimo.dias_atraso(), 3)
         self.assertEqual(self.emprestimo.calcular_multa(), Decimal("6.00"))
-        # Mesmo consultando numa data muito posterior, a multa não cresce.
         self.assertEqual(self.emprestimo.calcular_multa(date(2027, 3, 1)), Decimal("6.00"))
         self.assertFalse(self.emprestimo.esta_atrasado(date(2027, 3, 1)))
 

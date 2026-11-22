@@ -2,10 +2,8 @@ from src.models.entities.material import Material
 from src.models.entities.tipo_material import TipoMaterial
 from src.models.entities.grupo_responsavel import GrupoResponsavel
 
-"""Classe Jaleco, que herda de Material."""
-class Jaleco(Material):
-    """Representa um exemplar de jaleco"""
 
+class Jaleco(Material):
     TAMANHOS_ACEITOS = frozenset({
         "PP", "P", "M", "G", "GG", "XG"
     })
@@ -43,7 +41,6 @@ class Jaleco(Material):
         return self.__tamanho
 
     def validar_dados_especificos(self) -> None:
-        """Verifica se o tamanho pertence aos valores aceitos."""
         if (
             not isinstance(self.__tamanho, str)
             or self.__tamanho not in self.TAMANHOS_ACEITOS
@@ -54,7 +51,6 @@ class Jaleco(Material):
             )
 
     def detalhes_especificos(self) -> dict:
-        """Retorna os dados particulares do jaleco."""
         return {
             "tamanho": self.__tamanho
         }

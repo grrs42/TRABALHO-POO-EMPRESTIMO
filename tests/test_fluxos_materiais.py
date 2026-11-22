@@ -1,4 +1,3 @@
-
 import unittest
 from unittest.mock import Mock
 
@@ -11,8 +10,6 @@ from src.models.factories.material_factory import MaterialFactory
 
 
 class TestFluxosMateriais(unittest.TestCase):
-    """Testa cadastro e consulta com persistência simulada."""
-
     def setUp(self):
         self.tipo = TipoMaterial(
             sigla="JAL",
@@ -27,7 +24,6 @@ class TestFluxosMateriais(unittest.TestCase):
             id=1
         )
 
-        # Simula os repositórios sem acessar o PostgreSQL.
         self.materiais_repo = Mock()
         self.tipos_repo = Mock()
         self.grupos_repo = Mock()
@@ -35,7 +31,6 @@ class TestFluxosMateriais(unittest.TestCase):
         self.tipos_repo.select_tipo.return_value = self.tipo
         self.grupos_repo.select_grupo.return_value = self.grupo
 
-        # Armazena os materiais apenas durante cada teste.
         self.banco_simulado = {}
 
         self.materiais_repo.insert_material.side_effect = self._salvar
@@ -54,7 +49,6 @@ class TestFluxosMateriais(unittest.TestCase):
         )
 
     def _salvar(self, material):
-        """Simula a persistência de um exemplar válido."""
         codigo = f"JAL-{len(self.banco_simulado) + 1:03d}"
 
         salvo = MaterialFactory.criar(
@@ -104,7 +98,6 @@ class TestFluxosMateriais(unittest.TestCase):
             quantidade_antes
         )
 
-        # O repositório não deve receber uma tentativa de INSERT.
         self.materiais_repo.insert_material.assert_not_called()
 
     def test_consulta_material_existente(self):

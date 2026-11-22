@@ -1,4 +1,5 @@
 import os
+from getpass import getpass
 from typing import Dict
 
 class UsuarioRegisterView:
@@ -6,9 +7,10 @@ class UsuarioRegisterView:
         os.system('cls||clear')
         print('Registrar usuário \n\n')
         nome = input('Nome completo do aluno a ser cadastrado: \n')
-        matricula = input('Matricula do aluno a ser cadastrado: \n')
+        matricula = input('Matricula do aluno a ser cadastrado (10 dígitos): \n')
+        senha = getpass('Senha de acesso (mínimo 6 caracteres): \n')
         new_usuario_informations = {
-            "nome": nome, "matricula": matricula
+            "nome": nome, "matricula": matricula, "senha": senha
         }
         return new_usuario_informations
     def register_usuario_sucess(self, message: Dict) -> None:

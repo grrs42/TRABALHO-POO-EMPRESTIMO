@@ -4,8 +4,6 @@ from src.models.entities.grupo_responsavel import GrupoResponsavel
 
 
 class OutroMaterial(Material):
-    """Representa materiais sem especialização própria."""
-
     def __init__(
         self,
         tipo: TipoMaterial,
@@ -39,8 +37,6 @@ class OutroMaterial(Material):
         return self.__descricao
 
     def validar_dados_especificos(self) -> None:
-        """Verifica se o material possui descrição válida."""
-
         if (
             not isinstance(self.__descricao, str)
             or not self.__descricao
@@ -50,8 +46,6 @@ class OutroMaterial(Material):
             )
 
     def detalhes_especificos(self) -> dict:
-        """Retorna os atributos específicos do material."""
-
         return {
             "descricao": self.__descricao
         }

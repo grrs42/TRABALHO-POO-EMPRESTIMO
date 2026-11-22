@@ -62,7 +62,6 @@ class TestConsultasEmprestimosController(unittest.TestCase):
         self.controller = SistemaEmprestimosController(Mock(), Mock(), self.repo)
 
     def assert_sem_escrita(self):
-        """Consultas nunca devem realizar transações de alteração."""
         for metodo in (
             "registrar_solicitacao", "aprovar_solicitacao",
             "recusar_solicitacao", "registrar_devolucao"
@@ -231,7 +230,6 @@ class TestConsultasEmprestimosController(unittest.TestCase):
         self.assertEqual(resposta["error"], "Não foi possível listar as solicitações.")
 
     def test_listar_pendencias_retorna_multa_apos_devolucao(self):
-        # Empréstimo devolvido em 30/11, vencimento 27/11: três dias.
         resposta = self.controller.listar_pendencias_usuario("2026000001")
         self.assertTrue(resposta["success"])
         self.assertEqual(resposta["message"]["count"], 1)
@@ -248,7 +246,6 @@ class TestConsultasEmprestimosController(unittest.TestCase):
         self.assertEqual(resposta["message"]["total_multa_calculada"], "0.00")
 
     def test_listar_pendencias_inclui_ativo_atrasado(self):
-        # Empréstimo vencido há muitos anos: permanece uma multa provisória.
         self.repo.list_emprestimos_usuario.return_value = [self.ativo]
         self.ativo = Emprestimo(
             usuario=self.usuario, material=self.material, id=16,

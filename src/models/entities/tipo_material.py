@@ -1,8 +1,6 @@
 import unicodedata
 
 class TipoMaterial:
-    """Representa uma categoria cadastrável de material acadêmico."""
-
     ESPECIALIZACOES = frozenset({
         "CALCULADORA",
         "JALECO",
@@ -51,7 +49,6 @@ class TipoMaterial:
 
     @staticmethod
     def gerar_sigla(nome: str) -> str:
-        """Gera uma sigla de três letras a partir do nome."""
         sem_acento = (
             unicodedata.normalize("NFKD", nome)
             .encode("ascii", "ignore")

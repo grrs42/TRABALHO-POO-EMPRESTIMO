@@ -3,8 +3,6 @@ from typing import Dict
 
 class TipoMaterialRegisterView:    
     def register_tipo_view(self) -> Dict:
-        """Recebe os dados para cadastrar um tipo de material."""
-
         os.system('cls||clear')
         print('Registrar Tipo de Material\n')
         nome = input('Nome do novo tipo (ex: Calculadora):\n')

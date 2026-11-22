@@ -28,7 +28,6 @@ class TestSistemaEmprestimosController(unittest.TestCase):
         self.materiais_repository.select_material.return_value = self.material
 
         def simular_persistencia(emprestimo):
-            # Simula a reconstrução do objeto após o INSERT no banco.
             return Emprestimo(
                 usuario=emprestimo.usuario,
                 material=emprestimo.material,
@@ -143,10 +142,7 @@ class TestSistemaEmprestimosController(unittest.TestCase):
         self.assertTrue(self.material.verificar_disponibilidade())
 
 
-
 class TestAprovacaoRecusaController(unittest.TestCase):
-    """Testa as operações com repositórios simulados, sem Postgree"""
-
     def setUp(self):
         from datetime import datetime
 

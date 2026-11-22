@@ -45,7 +45,6 @@ class Material(ABC):
     
     @staticmethod
     def gerar_codigo(sigla: str, numero: int) -> str:
-        # Sigla do tipo + número sequencial do tipo (ex: "CAL", 1 -> "CAL-001")
         return f"{sigla}-{numero:03d}"
 
     def verificar_disponibilidade(self) -> bool:
@@ -56,11 +55,11 @@ class Material(ABC):
         
     @abstractmethod
     def validar_dados_especificos(self) -> None:
-        """Valida os atributos específicos da subclasse."""
+        pass
 
     @abstractmethod
     def detalhes_especificos(self) -> dict:
-        """Retorna os atributos específicos da subclasse."""
+        pass
     
 
     def to_dict(self) -> dict:

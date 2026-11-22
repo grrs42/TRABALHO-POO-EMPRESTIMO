@@ -1,3 +1,4 @@
+import re
 from typing import Dict
 from src.models.entities.usuario import Usuario
 from src.models.repositories.usuarios_repository import UsuariosRepository
@@ -9,7 +10,7 @@ class UsuarioFinderController():
         try:
             self._validate_fields(usuario_finder_informations)
             usuario = self.__repository.select_usuario(
-                usuario_finder_informations["matricula"]
+                usuario_finder_informations["matricula"].strip()
             )
             if usuario is None:
                 raise Exception(' Usuário não encontrado!')
@@ -18,8 +19,8 @@ class UsuarioFinderController():
         except Exception as exception:
             return {"success": False, "error": str(exception)}
     def _validate_fields(self, usuario_finder_informations: Dict) -> None:
-        if not usuario_finder_informations["matricula"].isdigit():
-            raise Exception(' Campo de matrícula incorreto!')
+        if re.fullmatch(r"[0-9]{10}", usuario_finder_informations["matricula"].strip()) is None:
+            raise Exception(' A matrícula deve conter exatamente 10 dígitos!')
     def __format_response(self, usuario: Usuario) -> Dict:
         return {
             "count": 1,

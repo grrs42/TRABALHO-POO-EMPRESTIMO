@@ -10,7 +10,6 @@ class MateriaisRepository:
         detalhes = material.detalhes_especificos()
 
         with DBConnectionHandler() as db:
-            # Gera o próximo número para este tipo de material.
             db.cursor.execute(
                 """
                 SELECT COALESCE(MAX(numero), 0) + 1
@@ -27,7 +26,6 @@ class MateriaisRepository:
                 numero
             )
 
-            # Salva atributos comuns e específicos.
             db.cursor.execute(
                 """
                 INSERT INTO materiais (
@@ -66,7 +64,6 @@ class MateriaisRepository:
 
             novo_id = db.cursor.fetchone()[0]
 
-            # Reconstrói o objeto com o ID e código gerados.
             material_salvo = MaterialFactory.criar(
                 tipo=material.tipo,
                 grupo=material.grupo,
@@ -81,7 +78,6 @@ class MateriaisRepository:
 
 
     def select_material(self, codigo: str) -> Material | None:
-        """Consulta um exemplar e reconstrói sua subclasse."""
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """
@@ -114,7 +110,6 @@ class MateriaisRepository:
         if row is None:
             return None
 
-        # Reconstrói o tipo e o grupo associados ao material.
         tipo = TipoMaterial(
             id=row[9],
             sigla=row[10],
@@ -128,7 +123,6 @@ class MateriaisRepository:
             nome=row[15]
         )
 
-        # Recupera somente os atributos da especialização.
         detalhes_por_especializacao = {
             "CALCULADORA": {"modelo": row[4]},
             "JALECO": {"tamanho": row[5]},
@@ -143,7 +137,6 @@ class MateriaisRepository:
             tipo.especializacao
         ]
 
-        # Retorna a subclasse correspondente ao tipo cadastrado.
         return MaterialFactory.criar(
             tipo=tipo,
             grupo=grupo,

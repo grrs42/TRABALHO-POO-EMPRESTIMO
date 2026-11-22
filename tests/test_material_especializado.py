@@ -51,8 +51,7 @@ class TestMateriaisEspecializados(unittest.TestCase):
         self.assertEqual(fichas[0]["tamanho"], "M")
         self.assertEqual(fichas[1]["titulo"], "Cálculo I")
         self.assertEqual(fichas[1]["editora"], "LTC")
-        
-    """Esse teste verifica que Material não pode ser instanciada diretamente."""
+
     def test_material_abstrato_nao_pode_ser_instanciado(self):
         tipo = TipoMaterial(
             sigla="OUT",
@@ -124,9 +123,7 @@ class TestMateriaisEspecializados(unittest.TestCase):
                 grupo=self.grupo,
                 modelo=" "
             )
-            
-    
-    """Testes para OutroMaterial"""
+
     def test_outro_material_valida_descricao(self):
         tipo = TipoMaterial("REG", "Régua", id=4)
 

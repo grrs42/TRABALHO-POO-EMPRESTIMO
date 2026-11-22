@@ -1,5 +1,3 @@
-"""Testes da devolução sem PostgreSQL, usando Mock para a persistência."""
-
 import unittest
 from datetime import datetime
 from unittest.mock import Mock

@@ -4,8 +4,6 @@ from src.models.entities.grupo_responsavel import GrupoResponsavel
 
 
 class Calculadora(Material):
-    """Representa um exemplar de calculadora acadêmica."""
-
     def __init__(
         self,
         tipo: TipoMaterial,
@@ -39,8 +37,6 @@ class Calculadora(Material):
         return self.__modelo
 
     def validar_dados_especificos(self) -> None:
-        """Valida o modelo informado para a calculadora."""
-
         if (
             not isinstance(self.__modelo, str)
             or not self.__modelo
@@ -50,8 +46,6 @@ class Calculadora(Material):
             )
 
     def detalhes_especificos(self) -> dict:
-        """Retorna os atributos específicos da calculadora."""
-
         return {
             "modelo": self.__modelo
         }

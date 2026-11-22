@@ -4,8 +4,6 @@ from src.models.entities.grupo_responsavel import GrupoResponsavel
 
 
 class Livro(Material):
-    """Representa um exemplar de livro acadêmico."""
-
     def __init__(
         self,
         tipo: TipoMaterial,
@@ -50,8 +48,6 @@ class Livro(Material):
         return self.__editora
 
     def validar_dados_especificos(self) -> None:
-        """Verifica os dados bibliográficos obrigatórios."""
-
         if (
             not isinstance(self.__titulo, str)
             or not self.__titulo
@@ -69,7 +65,6 @@ class Livro(Material):
             )
 
     def detalhes_especificos(self) -> dict:
-        """Retorna as informações próprias de um livro."""
         return {
             "titulo": self.__titulo,
             "editora": self.__editora

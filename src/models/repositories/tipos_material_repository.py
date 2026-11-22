@@ -3,11 +3,7 @@ from src.models.entities.tipo_material import TipoMaterial
 
 
 class TiposMaterialRepository:
-    """Responsável pela persistência dos tipos de materiais."""
-
     def insert_tipo(self, tipo: TipoMaterial) -> TipoMaterial:
-        """Cadastra um tipo de material no PostgreSQL."""
-
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """
@@ -33,8 +29,6 @@ class TiposMaterialRepository:
         )
 
     def select_tipo(self, sigla: str) -> TipoMaterial | None:
-        """Busca um tipo de material pela sigla."""
-
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """
@@ -58,8 +52,6 @@ class TiposMaterialRepository:
         )
 
     def list_tipos(self) -> list[TipoMaterial]:
-        """Retorna todos os tipos de materiais cadastrados."""
-
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """

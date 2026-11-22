@@ -16,7 +16,6 @@ class MaterialRegisterController():
         self.__tipos_repository = tipos_repository
         self.__grupos_repository = grupos_repository
     def get_options(self) -> Dict:
-        # Tipos e grêmios/laboratórios cadastrados, para a view exibir antes do registro
         try:
             options = {
                 "tipos": [tipo.to_dict() for tipo in self.__tipos_repository.list_tipos()],

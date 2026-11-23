@@ -1,9 +1,27 @@
+
 from src.models.settings.db_connection_handler import DBConnectionHandler
 from src.models.entities.tipo_material import TipoMaterial
 
 
 class TiposMaterialRepository:
+    """
+    Gerencia a persistência das categorias de materiais.
+
+    Realiza inserções e consultas na tabela tipos_material
+    do PostgreSQL.
+
+    Cada categoria possui uma sigla, um nome e uma
+    especialização que determina a classe concreta
+    utilizada pela MaterialFactory.
+
+    Os registros recuperados são reconstruídos como
+    objetos da entidade TipoMaterial.
+    """
+
     def insert_tipo(self, tipo: TipoMaterial) -> TipoMaterial:
+        """
+        Insere uma nova categoria de material no banco.
+        """
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """
@@ -29,6 +47,9 @@ class TiposMaterialRepository:
         )
 
     def select_tipo(self, sigla: str) -> TipoMaterial | None:
+        """
+        Consulta uma categoria pela sua sigla.
+        """
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """
@@ -52,6 +73,9 @@ class TiposMaterialRepository:
         )
 
     def list_tipos(self) -> list[TipoMaterial]:
+        """
+        Recupera todas as categorias cadastradas.
+        """
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """

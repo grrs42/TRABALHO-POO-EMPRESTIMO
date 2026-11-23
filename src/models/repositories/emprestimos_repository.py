@@ -1,3 +1,4 @@
+
 import psycopg2.errors
 
 from src.models.settings.db_connection_handler import DBConnectionHandler
@@ -7,6 +8,20 @@ from src.models.repositories.materiais_repository import MateriaisRepository
 
 
 class EmprestimosRepository:
+    """
+    Gerencia a persistência e a consulta dos empréstimos.
+
+    Realiza operações sobre a tabela emprestimos e
+    mantém a disponibilidade dos materiais consistente
+    durante solicitações, recusas e devoluções.
+
+    Os registros recuperados são reconstruídos
+    como objetos da entidade correspondente.
+    """
+
+    # Consulta SQL compartilhada pelos métodos de leitura.
+    # Reúne os dados do empréstimo, o código do material
+    # e o vínculo com o grupo
     _SELECT = """
         SELECT
             e.id,
@@ -32,6 +47,12 @@ class EmprestimosRepository:
         self.__materiais_repository = materiais_repository or MateriaisRepository()
 
     def registrar_solicitacao(self, emprestimo: Emprestimo) -> Emprestimo:
+        """
+        Registra uma nova solicitação de empréstimo.
+
+        O registro da solicitação e a reserva do
+        exemplar ocorrem na mesma transação.
+        """
         if (
             not isinstance(emprestimo, Emprestimo)
             or emprestimo.id is not None
@@ -81,6 +102,15 @@ class EmprestimosRepository:
         return self.select_emprestimo(novo_id)
 
     def select_emprestimo(self, emprestimo_id: int) -> Emprestimo | None:
+        """
+        Consulta um empréstimo pelo identificador
+        Returns:
+            Objeto Emprestimo reconstruído a partir
+            dos dados do banco, quando encontrado.
+
+        Utiliza a consulta SQL compartilhada e o
+        método auxiliar __montar() para reconstrução.
+        """
         with DBConnectionHandler() as db:
             db.cursor.execute(self._SELECT + " WHERE e.id = %s", (emprestimo_id,))
             row = db.cursor.fetchone()
@@ -91,6 +121,9 @@ class EmprestimosRepository:
     def aprovar_solicitacao(
         self, emprestimo_id: int, codigo_grupo: str, prazo_dias: int
     ) -> Emprestimo:
+        """
+        Aprova uma solicitação pendente.
+        """
         with DBConnectionHandler() as db:
             emprestimo, codigo_real = self.__carregar_para_alteracao(
                 db, emprestimo_id, codigo_grupo
@@ -116,6 +149,9 @@ class EmprestimosRepository:
         return self.select_emprestimo(emprestimo_id)
 
     def recusar_solicitacao(self, emprestimo_id: int, codigo_grupo: str) -> Emprestimo:
+        """
+        Recusa uma solicitação pendente.
+        """
         with DBConnectionHandler() as db:
             emprestimo, _ = self.__carregar_para_alteracao(
                 db, emprestimo_id, codigo_grupo
@@ -132,6 +168,15 @@ class EmprestimosRepository:
         return self.select_emprestimo(emprestimo_id)
 
     def registrar_devolucao(self, emprestimo_id: int, codigo_grupo: str) -> Emprestimo:
+        """
+        Registra a devolução de um empréstimo ativo.
+
+        A entidade Emprestimo valida a possibilidade
+        de devolução e atualiza seu estado.
+
+        O empréstimo e o material são atualizados
+        na mesma transação PostgreSQL.
+        """
         with DBConnectionHandler() as db:
             emprestimo, _ = self.__carregar_para_alteracao(
                 db, emprestimo_id, codigo_grupo
@@ -148,21 +193,33 @@ class EmprestimosRepository:
         return self.select_emprestimo(emprestimo_id)
 
     def list_emprestimos_usuario(self, matricula: str) -> list[Emprestimo]:
+        """
+        Consulta o histórico de empréstimos de um estudante.
+        """
         return self.__listar(" WHERE e.usuario_matricula = %s ORDER BY e.id", (matricula,))
 
     def list_emprestimos_pendentes(self, codigo_grupo: str) -> list[Emprestimo]:
+        """
+        Lista as solicitações pendentes de um grupo.
+        """
         return self.__listar(
             " WHERE UPPER(g.codigo) = UPPER(%s) AND e.status = %s ORDER BY e.id",
             (codigo_grupo, StatusEmprestimo.PENDENTE.value),
         )
 
     def list_emprestimos_ativos(self, codigo_grupo: str) -> list[Emprestimo]:
+        """
+        Lista os empréstimos ativos de um grupo.
+        """
         return self.__listar(
             " WHERE UPPER(g.codigo) = UPPER(%s) AND e.status = %s ORDER BY e.id",
             (codigo_grupo, StatusEmprestimo.ATIVO.value),
         )
 
     def __listar(self, filtro: str, parametros: tuple) -> list[Emprestimo]:
+        """
+        Executa consultas de listagem de empréstimos.
+        """
         with DBConnectionHandler() as db:
             db.cursor.execute(self._SELECT + filtro, parametros)
             rows = db.cursor.fetchall()
@@ -171,6 +228,9 @@ class EmprestimosRepository:
     def __carregar_para_alteracao(
         self, db: DBConnectionHandler, emprestimo_id: int, codigo_grupo: str
     ) -> tuple[Emprestimo, str]:
+        """
+        Recupera e bloqueia um empréstimo para alteração.
+        """
         db.cursor.execute(
             """
             SELECT e.id, g.codigo
@@ -192,6 +252,9 @@ class EmprestimosRepository:
         return self.__montar(db.cursor.fetchone()), row[1]
 
     def __montar(self, row: tuple) -> Emprestimo:
+        """
+        Reconstrói um objeto Emprestimo a partir de uma consulta.
+        """
         usuario = self.__usuarios_repository.select_usuario(row[1])
         material = self.__materiais_repository.select_material(row[2])
         if usuario is None or material is None:

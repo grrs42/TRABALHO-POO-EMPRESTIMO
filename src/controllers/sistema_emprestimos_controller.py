@@ -1,3 +1,4 @@
+
 import re
 from decimal import Decimal
 
@@ -5,6 +6,21 @@ from src.models.entities.emprestimo import Emprestimo, StatusEmprestimo
 
 
 class SistemaEmprestimosController:
+    """
+    Coordena as funcionalidades de gerenciamento de empréstimos.
+
+    Recebe os dados das operações, valida identificadores e
+    contextos de acesso e utiliza os repositórios para consultar
+    ou modificar os registros.
+
+    Abrange solicitação, aprovação, recusa, devolução, consultas,
+    acompanhamento de multas e geração de avisos simulados.
+
+    As regras de estado são definidas pela entidade Emprestimo.
+    As operações de persistência e as transações são
+    responsabilidade dos repositórios.
+    """
+
     def __init__(
         self,
         usuarios_repository,
@@ -18,6 +34,15 @@ class SistemaEmprestimosController:
         self.__notificador = notificador
 
     def solicitar_emprestimo(self, dados: dict) -> dict:
+        """
+        Registra uma solicitação de empréstimo.
+
+        Verifica a existência do estudante e do material,
+        além da disponibilidade do exemplar.
+
+        Em caso de sucesso, o repositório cria o empréstimo
+        PENDENTE e reserva o exemplar na mesma transação.
+        """
         try:
             matricula, codigo = self.__validar_dados_solicitacao(dados)
 
@@ -50,6 +75,16 @@ class SistemaEmprestimosController:
 
     @staticmethod
     def __validar_dados_solicitacao(dados: dict) -> tuple[str, str]:
+        """
+        Valida e normaliza os identificadores da solicitação.
+
+        Raises:
+            ValueError: Se os dados ou identificadores
+                não seguirem os formatos esperados.
+
+        O código deve seguir o formato CAL-001, aceitando
+        três ou mais dígitos após o hífen.
+        """
         if not isinstance(dados, dict):
             raise ValueError("Os dados da solicitação devem ser um dicionário.")
 
@@ -73,6 +108,14 @@ class SistemaEmprestimosController:
     def aprovar_emprestimo(
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
+        """
+        Aprova uma solicitação pendente de empréstimo.
+
+        Valida o ID, o prazo em dias corridos, a autorização
+        do grupo e o estado PENDENTE da solicitação.
+
+        O repositório registra a aprovação e o prazo.
+        """
         try:
             if not isinstance(dados, dict):
                 raise ValueError("Os dados da aprovação devem ser um dicionário.")
@@ -98,6 +141,13 @@ class SistemaEmprestimosController:
     def recusar_emprestimo(
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
+        """
+        Recusa uma solicitação pendente de empréstimo.
+
+        Valida a autorização do grupo e o estado PENDENTE.
+        O repositório altera o estado para RECUSADO e
+        libera o exemplar na mesma transação.
+        """
         try:
             if not isinstance(dados, dict):
                 raise ValueError("Os dados da recusa devem ser um dicionário.")
@@ -120,6 +170,13 @@ class SistemaEmprestimosController:
     def registrar_devolucao(
         self, dados: dict, codigo_grupo_autenticado: str
     ) -> dict:
+        """
+        Registra a devolução de um empréstimo ativo.
+
+        Confirma que o empréstimo está ATIVO e pertence
+        ao grupo responsável. O repositório registra
+        a devolução e libera o material em uma transação.
+        """
         try:
             if not isinstance(dados, dict):
                 raise ValueError("Os dados da devolução devem ser um dicionário.")
@@ -145,6 +202,13 @@ class SistemaEmprestimosController:
         matricula_autenticada: str | None = None,
         codigo_grupo_autenticado: str | None = None,
     ) -> dict:
+        """
+        Consulta um empréstimo pelo identificador.
+
+        Exige exatamente um dos contextos autenticados.
+        Estudantes consultam seus próprios empréstimos e
+        grupos consultam empréstimos de seus materiais.
+        """
         try:
             contexto = self.__validar_contexto_consulta(
                 matricula_autenticada, codigo_grupo_autenticado
@@ -168,6 +232,12 @@ class SistemaEmprestimosController:
             return {"success": False, "error": "Não foi possível consultar o empréstimo."}
 
     def listar_emprestimos_usuario(self, matricula_autenticada: str) -> dict:
+        """
+        Consulta o histórico de empréstimos de um estudante.
+
+        Verifica se todos os registros recuperados pertencem
+        à matrícula informada
+        """
         try:
             matricula = self.__validar_matricula_autenticada(matricula_autenticada)
             emprestimos = self.__emprestimos_repository.list_emprestimos_usuario(
@@ -183,6 +253,12 @@ class SistemaEmprestimosController:
     def listar_solicitacoes_pendentes(
         self, codigo_grupo_autenticado: str
     ) -> dict:
+        """
+        Lista solicitações pendentes de um grupo responsável.
+
+        Confere o estado e a associação de cada registro
+        ao grupo autenticado. Uma lista vazia é válida.
+        """
         try:
             grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
             emprestimos = self.__emprestimos_repository.list_emprestimos_pendentes(
@@ -202,6 +278,12 @@ class SistemaEmprestimosController:
             return {"success": False, "error": "Não foi possível listar as solicitações."}
 
     def listar_emprestimos_ativos(self, codigo_grupo_autenticado: str) -> dict:
+        """
+        Lista os empréstimos ativos de um grupo responsável.
+
+        Utiliza uma consulta auxiliar que valida os registros
+        recuperados. Uma lista vazia é válida.
+        """
         try:
             grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
             emprestimos = self.__listar_ativos_do_grupo(grupo)
@@ -212,6 +294,12 @@ class SistemaEmprestimosController:
             return {"success": False, "error": "Não foi possível listar os empréstimos ativos."}
 
     def gerar_avisos_atraso(self, codigo_grupo_autenticado: str) -> dict:
+        """
+        Gera avisos simulados para empréstimos ativos atrasados.
+
+        Exige que o serviço de notificação esteja configurado.
+        Para cada empréstimo atrasado, chama o notificador.
+        """
         try:
             grupo = self.__validar_grupo_autenticado(codigo_grupo_autenticado)
             if self.__notificador is None:
@@ -229,6 +317,9 @@ class SistemaEmprestimosController:
             return {"success": False, "error": "Não foi possível gerar os avisos."}
 
     def __listar_ativos_do_grupo(self, grupo: str) -> list:
+        """
+        Recupera e valida os empréstimos ativos do grupo.
+        """
         emprestimos = self.__emprestimos_repository.list_emprestimos_ativos(grupo)
         self.__validar_lista_emprestimos(emprestimos)
         if any(
@@ -240,6 +331,15 @@ class SistemaEmprestimosController:
         return emprestimos
 
     def listar_pendencias_usuario(self, matricula_autenticada: str) -> dict:
+        """
+        Consulta multas simuladas associadas a um estudante.
+
+        Utiliza os métodos da entidade Emprestimo para
+        calcular os valores de atraso e multa.
+
+        Sem multas, retorna uma lista vazia e total zero.
+        Não realiza cobranças nem altera os registros.
+        """
         try:
             matricula = self.__validar_matricula_autenticada(matricula_autenticada)
             emprestimos = self.__emprestimos_repository.list_emprestimos_usuario(
@@ -262,6 +362,9 @@ class SistemaEmprestimosController:
 
     @staticmethod
     def __validar_matricula_autenticada(matricula: str) -> str:
+        """
+        Verifica o identificador do estudante autenticado.
+        """
         if not isinstance(matricula, str):
             raise PermissionError("Conta de estudante não autenticada.")
         normalizada = matricula.strip()
@@ -275,6 +378,9 @@ class SistemaEmprestimosController:
         matricula: str | None,
         codigo_grupo: str | None,
     ) -> tuple[str, str]:
+        """
+        Identifica e valida o perfil utilizado em uma consulta.
+        """
         if (matricula is None) == (codigo_grupo is None):
             raise PermissionError("Informe exatamente uma conta autenticada para consulta.")
         if matricula is not None:
@@ -285,6 +391,9 @@ class SistemaEmprestimosController:
     def __pertence_ao_contexto(
         emprestimo: Emprestimo, contexto: tuple[str, str]
     ) -> bool:
+        """
+        Verifica a autorização de acesso a um empréstimo.
+        """
         if not isinstance(emprestimo, Emprestimo):
             return False
         tipo, codigo = contexto
@@ -294,6 +403,9 @@ class SistemaEmprestimosController:
 
     @staticmethod
     def __validar_lista_emprestimos(emprestimos: list) -> None:
+        """
+        Verifica o formato dos resultados do repositório.
+        """
         if not isinstance(emprestimos, list) or any(
             not isinstance(item, Emprestimo) for item in emprestimos
         ):
@@ -301,6 +413,9 @@ class SistemaEmprestimosController:
 
     @classmethod
     def __validar_lista_usuario(cls, emprestimos: list, matricula: str) -> None:
+        """
+        Verifica se uma lista pertence ao estudante informado.
+        """
         cls.__validar_lista_emprestimos(emprestimos)
         if any(item.usuario.matricula != matricula for item in emprestimos):
             raise RuntimeError("O repositório retornou dados de outro estudante.")
@@ -309,6 +424,11 @@ class SistemaEmprestimosController:
     def __formatar_lista_emprestimos(
         emprestimos: list[Emprestimo], tipo: str
     ) -> dict:
+        """
+        Organiza uma lista de empréstimos para apresentação.
+
+        Uma lista vazia é apresentada como resultado válido.
+        """
         return {
             "success": True,
             "message": {
@@ -321,6 +441,12 @@ class SistemaEmprestimosController:
     def __verificar_solicitacao_pendente(
         self, emprestimo_id: int, codigo_grupo: str
     ) -> None:
+        """
+        Verifica se uma solicitação pode ser processada.
+
+        Não modifica o empréstimo, apenas verifica
+        as condições anteriores à aprovação ou recusa.
+        """
         emprestimo = self.__emprestimos_repository.select_emprestimo(
             emprestimo_id
         )
@@ -335,6 +461,9 @@ class SistemaEmprestimosController:
     def __verificar_emprestimo_ativo(
         self, emprestimo_id: int, codigo_grupo: str
     ) -> None:
+        """
+        Verifica se um empréstimo pode ser devolvido.
+        """
         emprestimo = self.__emprestimos_repository.select_emprestimo(
             emprestimo_id
         )
@@ -348,6 +477,9 @@ class SistemaEmprestimosController:
 
     @staticmethod
     def __validar_grupo_autenticado(codigo: str) -> str:
+        """
+        Valida o identificador de um grupo autenticado.
+        """
         if not isinstance(codigo, str):
             raise PermissionError("Conta do grupo responsável não autenticada.")
         normalizado = codigo.strip().upper()
@@ -357,6 +489,11 @@ class SistemaEmprestimosController:
 
     @staticmethod
     def __validar_numero_positivo(valor: object, nome: str) -> int:
+        """
+        Converte e valida um identificador ou prazo positivo.
+
+        Valores booleanos e números fracionários não são aceitos.
+        """
         if type(valor) is int:
             numero = valor
         elif isinstance(valor, str) and re.fullmatch(r"[0-9]+", valor.strip()):

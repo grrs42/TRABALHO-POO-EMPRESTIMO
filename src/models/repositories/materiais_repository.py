@@ -1,11 +1,37 @@
+
 from src.models.settings.db_connection_handler import DBConnectionHandler
 from src.models.entities.material import Material
 from src.models.entities.tipo_material import TipoMaterial
 from src.models.entities.grupo_responsavel import GrupoResponsavel
 from src.models.factories.material_factory import MaterialFactory
 
+
 class MateriaisRepository:
+    """
+    Gerencia a persistência dos exemplares de materiais acadêmicos.
+
+    Realiza operações de inserção, consulta e exclusão
+    na tabela materiais do PostgreSQL.
+
+    Cada exemplar é registrado individualmente, com
+    um código formado pela sigla da categoria e por
+    um número sequencial.
+    """
+
     def insert_material(self, material: Material) -> Material:
+        """
+        Insere um novo exemplar de material no banco.
+
+        O método validar_dados_especificos() demonstra
+        polimorfismo, pois cada subclasse aplica
+        suas próprias regras de validação.
+
+        O método detalhes_especificos() recupera os
+        atributos particulares de cada especialização.
+
+        A geração do número utiliza o maior número
+        cadastrado para a categoria, acrescido de um.
+        """
         material.validar_dados_especificos()
         detalhes = material.detalhes_especificos()
 
@@ -76,8 +102,10 @@ class MateriaisRepository:
 
         return material_salvo
 
-
     def select_material(self, codigo: str) -> Material | None:
+        """
+        Consulta um exemplar pelo código individual.
+        """
         with DBConnectionHandler() as db:
             db.cursor.execute(
                 """
@@ -104,7 +132,7 @@ class MateriaisRepository:
                 WHERE m.codigo = %s
                 """,
                 (codigo,)
-            )    
+            )
             row = db.cursor.fetchone()
 
         if row is None:
@@ -123,6 +151,8 @@ class MateriaisRepository:
             nome=row[15]
         )
 
+        # Associa os campos recuperados à especialização
+        # correspondente
         detalhes_por_especializacao = {
             "CALCULADORA": {"modelo": row[4]},
             "JALECO": {"tamanho": row[5]},
@@ -148,6 +178,9 @@ class MateriaisRepository:
         )
 
     def delete_material(self, codigo: str) -> bool:
+        """
+        Exclui um exemplar identificado pelo código.
+        """
         with DBConnectionHandler() as db:
             db.cursor.execute("DELETE FROM materiais WHERE codigo = %s", (codigo,))
             return db.cursor.rowcount > 0

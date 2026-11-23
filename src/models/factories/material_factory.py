@@ -1,3 +1,4 @@
+
 from src.models.entities.material import Material
 from src.models.entities.jaleco import Jaleco
 from src.models.entities.livro import Livro
@@ -8,6 +9,17 @@ from src.models.entities.grupo_responsavel import GrupoResponsavel
 
 
 class MaterialFactory:
+    """
+    Centraliza a criação de objetos especializados de Material.
+
+    Seleciona a classe concreta a partir da especialização
+    definida em TipoMaterial.
+
+    É utilizada tanto no cadastro de novos exemplares quanto
+    na reconstrução de objetos recuperados do PostgreSQL.
+    """
+
+    # Relaciona cada especialização à sua classe concreta.
     _CLASSES = {
         "JALECO": Jaleco,
         "LIVRO": Livro,
@@ -15,6 +27,7 @@ class MaterialFactory:
         "OUTRO": OutroMaterial
     }
 
+    # Define os campos específicos exigidos por especialização.
     _CAMPOS = {
         "JALECO": {"tamanho"},
         "LIVRO": {"titulo", "editora"},
@@ -34,6 +47,31 @@ class MaterialFactory:
         disponivel: bool = True,
         id: int | None = None
     ) -> Material:
+        """
+        Cria ou reconstrói um material de sua classe concreta.
+
+        Args:
+            tipo: Categoria que identifica a especialização.
+            grupo: Grupo responsável pelo material.
+            dados_especificos: Atributos exigidos pela
+                especialização, como tamanho ou modelo.
+            marca: Marca opcional.
+            codigo: Código do exemplar, quando existente.
+            disponivel: Situação de disponibilidade.
+            id: Identificador do registro no banco.
+
+        Returns:
+            Instância de Calculadora, Jaleco, Livro ou
+            OutroMaterial, conforme a especialização.
+
+        Raises:
+            ValueError: Se a especialização não for reconhecida,
+                os dados não forem um dicionário ou os campos
+                não corresponderem aos esperados.
+
+        A validação dos valores específicos é realizada
+        pela classe concreta instanciada.
+        """
         especializacao = tipo.especializacao
 
         classe_material = cls._CLASSES.get(especializacao)

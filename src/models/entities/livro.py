@@ -1,9 +1,20 @@
+
 from src.models.entities.material import Material
 from src.models.entities.tipo_material import TipoMaterial
 from src.models.entities.grupo_responsavel import GrupoResponsavel
 
 
 class Livro(Material):
+    """
+    Representa um exemplar de livro acadêmico.
+
+    Especializa a classe abstrata Material, acrescentando
+    título e editora como atributos obrigatórios.
+
+    Implementa os métodos abstratos responsáveis pela
+    validação e apresentação dos dados específicos.
+    """
+
     def __init__(
         self,
         tipo: TipoMaterial,
@@ -15,6 +26,23 @@ class Livro(Material):
         id: int | None = None,
         marca: str | None = None
     ) -> None:
+        """
+        Inicializa um exemplar de livro.
+
+        Args:
+            tipo: Categoria do material.
+            grupo: Grupo responsável pelo exemplar.
+            titulo: Título do livro, obrigatório.
+            editora: Editora do livro, obrigatória.
+            codigo: Código individual do exemplar.
+            disponivel: Disponibilidade inicial.
+            id: Identificador no banco de dados.
+            marca: Marca opcional do material.
+
+        Os atributos comuns são inicializados por Material.
+        O título e a editora são normalizados e validados
+        durante a criação do objeto.
+        """
 
         super().__init__(
             tipo=tipo,
@@ -41,13 +69,25 @@ class Livro(Material):
 
     @property
     def titulo(self) -> str:
+        """Retorna o título do livro."""
         return self.__titulo
 
     @property
     def editora(self) -> str:
+        """Retorna a editora do livro."""
         return self.__editora
 
     def validar_dados_especificos(self) -> None:
+        """
+        Verifica se o título e a editora são válidos.
+
+        Ambos devem ser strings não vazias, após
+        a remoção de espaços nas extremidades.
+
+        Raises:
+            ValueError: Se o título ou a editora
+                estiverem ausentes ou forem inválidos.
+        """
         if (
             not isinstance(self.__titulo, str)
             or not self.__titulo
@@ -65,6 +105,15 @@ class Livro(Material):
             )
 
     def detalhes_especificos(self) -> dict:
+        """
+        Retorna os atributos específicos do livro.
+
+        Implementa o contrato abstrato de Material,
+        permitindo o tratamento polimórfico dos materiais.
+
+        Returns:
+            Dicionário contendo título e editora.
+        """
         return {
             "titulo": self.__titulo,
             "editora": self.__editora

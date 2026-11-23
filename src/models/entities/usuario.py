@@ -17,10 +17,6 @@ class Usuario:
         """
         Inicializa um estudante com matrícula e nome.
 
-        Args:
-            matricula: Identificador acadêmico do estudante.
-            nome: Nome do estudante.
-
         Os atributos são armazenados de forma encapsulada.
         A validação dos dados de cadastro é realizada
         pelo Controller responsável.
@@ -41,11 +37,6 @@ class Usuario:
     def to_dict(self) -> dict:
         """
         Converte os dados do estudante em um dicionário.
-
-        Returns:
-            Dicionário contendo matrícula e nome.
-
-        Não modifica os atributos do estudante.
         """
         return {
             "matricula": self.__matricula,
@@ -53,7 +44,6 @@ class Usuario:
         }
 
     def __repr__(self) -> str:
-        """Retorna uma representação textual do estudante."""
         return (
             f"Usuario(matricula='{self.__matricula}', "
             f"nome='{self.__nome}')"

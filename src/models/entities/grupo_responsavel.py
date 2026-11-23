@@ -24,12 +24,6 @@ class GrupoResponsavel:
         """
         Inicializa um grupo responsável.
 
-        Args:
-            codigo: Código identificador do grupo.
-            nome: Nome da organização acadêmica.
-            id: Identificador do registro no PostgreSQL,
-                quando disponível.
-
         Os atributos são armazenados de forma encapsulada.
 
         Nesta versão, os grupos são previamente cadastrados
@@ -57,11 +51,6 @@ class GrupoResponsavel:
     def to_dict(self) -> dict:
         """
         Converte os dados do grupo em um dicionário.
-
-        Returns:
-            Dicionário contendo ID, código e nome do grupo.
-
-        Não altera os atributos do objeto.
         """
         return {
             "id": self.__id,
@@ -70,7 +59,6 @@ class GrupoResponsavel:
         }
 
     def __repr__(self) -> str:
-        """Retorna uma representação textual do grupo."""
         return (
             f"GrupoResponsavel(id={self.__id}, "
             f"codigo='{self.__codigo}', "

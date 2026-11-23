@@ -35,17 +35,6 @@ class TipoMaterial:
         """
         Inicializa uma categoria de material.
 
-        Args:
-            sigla: Identificador abreviado da categoria.
-            nome: Nome da categoria de material.
-            id: Identificador do registro no banco.
-            especializacao: Nome da especialização
-                utilizada na criação dos exemplares.
-
-        Raises:
-            ValueError: Se a especialização informada
-                não for uma string ou não for reconhecida.
-
         A especialização é normalizada para letras
         maiúsculas antes do armazenamento.
 
@@ -92,19 +81,6 @@ class TipoMaterial:
     def gerar_sigla(nome: str) -> str:
         """
         Gera uma sigla a partir do nome da categoria.
-
-        Args:
-            nome: Nome utilizado para formar a sigla.
-
-        Returns:
-            String formada pelas três primeiras letras
-            do nome, em maiúsculas e sem acentos.
-
-        A geração ignora números, espaços e caracteres
-        que não sejam letras.
-
-        A verificação de validade e unicidade da sigla
-        é responsabilidade dos componentes de cadastro.
         """
         sem_acento = (
             unicodedata.normalize("NFKD", nome)
@@ -119,12 +95,6 @@ class TipoMaterial:
     def to_dict(self) -> dict:
         """
         Converte a categoria em um dicionário.
-
-        Returns:
-            Dicionário contendo ID, sigla, nome
-            e especialização.
-
-        Não modifica os atributos da categoria.
         """
         return {
             "id": self.__id,
@@ -134,7 +104,6 @@ class TipoMaterial:
         }
 
     def __repr__(self) -> str:
-        """Retorna uma representação textual da categoria."""
         return (
             f"TipoMaterial(id={self.__id}, "
             f"sigla='{self.__sigla}', "

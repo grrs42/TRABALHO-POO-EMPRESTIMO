@@ -29,16 +29,6 @@ class Livro(Material):
         """
         Inicializa um exemplar de livro.
 
-        Args:
-            tipo: Categoria do material.
-            grupo: Grupo responsável pelo exemplar.
-            titulo: Título do livro, obrigatório.
-            editora: Editora do livro, obrigatória.
-            codigo: Código individual do exemplar.
-            disponivel: Disponibilidade inicial.
-            id: Identificador no banco de dados.
-            marca: Marca opcional do material.
-
         Os atributos comuns são inicializados por Material.
         O título e a editora são normalizados e validados
         durante a criação do objeto.
@@ -83,10 +73,6 @@ class Livro(Material):
 
         Ambos devem ser strings não vazias, após
         a remoção de espaços nas extremidades.
-
-        Raises:
-            ValueError: Se o título ou a editora
-                estiverem ausentes ou forem inválidos.
         """
         if (
             not isinstance(self.__titulo, str)
@@ -107,12 +93,6 @@ class Livro(Material):
     def detalhes_especificos(self) -> dict:
         """
         Retorna os atributos específicos do livro.
-
-        Implementa o contrato abstrato de Material,
-        permitindo o tratamento polimórfico dos materiais.
-
-        Returns:
-            Dicionário contendo título e editora.
         """
         return {
             "titulo": self.__titulo,

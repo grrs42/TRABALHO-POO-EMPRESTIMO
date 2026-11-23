@@ -119,15 +119,6 @@ class Emprestimo:
 
         Empréstimos ativos e devolvidos exigem confirmação,
         prazo e identificação do responsável.
-
-        Returns:
-            None.
-
-        Raises:
-            ValueError: Quando existem datas ausentes,
-                incompatíveis ou inconsistentes com o estado.
-
-        Não modifica os atributos do empréstimo.
         """
         dados_confirmacao = (
             self.__data_confirmacao,
@@ -203,25 +194,6 @@ class Emprestimo:
     ) -> None:
         """
         Aprova uma solicitação pendente de empréstimo.
-
-        Args:
-            prazo_dias: Prazo inteiro positivo, em dias corridos.
-            responsavel: Identificação de quem confirmou.
-            data_confirmacao: Momento opcional da aprovação.
-                Utiliza o momento atual quando omitido.
-
-        Returns:
-            None.
-
-        Raises:
-            ValueError: Se a solicitação não estiver pendente,
-                o prazo ou responsável forem inválidos,
-                ou a confirmação anteceder a solicitação.
-            TypeError: Se a data de confirmação for inválida.
-
-        Efeitos:
-            Altera o estado para ATIVO, registra a confirmação,
-            o responsável e a data prevista de devolução.
         """
         if self.__status != StatusEmprestimo.PENDENTE:
             raise ValueError("Somente solicitações pendentes podem ser aprovadas.")
@@ -243,18 +215,6 @@ class Emprestimo:
     def recusar(self) -> None:
         """
         Recusa uma solicitação de empréstimo pendente.
-
-        Returns:
-            None.
-
-        Raises:
-            ValueError: Se a solicitação não estiver pendente.
-
-        Efeitos:
-            Altera o estado do objeto para RECUSADO.
-
-        A liberação do exemplar no PostgreSQL é realizada
-        pela camada de persistência.
         """
         if self.__status != StatusEmprestimo.PENDENTE:
             raise ValueError("Somente solicitações pendentes podem ser recusadas.")
@@ -263,25 +223,6 @@ class Emprestimo:
     def registrar_devolucao(self, data_devolucao: datetime | None = None) -> None:
         """
         Registra a devolução de um empréstimo ativo.
-
-        Args:
-            data_devolucao: Momento opcional da devolução.
-                Utiliza o momento atual quando omitido.
-
-        Returns:
-            None.
-
-        Raises:
-            ValueError: Se o empréstimo não estiver ativo
-                ou a devolução anteceder a confirmação.
-            TypeError: Se a data de devolução for inválida.
-
-        Efeitos:
-            Registra a data de devolução e altera o estado
-            do objeto para DEVOLVIDO.
-
-        A atualização da disponibilidade no PostgreSQL
-        é realizada pelo repositório.
         """
         if self.__status != StatusEmprestimo.ATIVO:
             raise ValueError("Somente empréstimos ativos podem ser devolvidos.")
@@ -296,20 +237,6 @@ class Emprestimo:
     def esta_atrasado(self, hoje: date | None = None) -> bool:
         """
         Verifica se um empréstimo ativo está atrasado.
-
-        Args:
-            hoje: Data de referência opcional.
-                Utiliza a data atual quando omitida.
-
-        Returns:
-            True se o empréstimo estiver ATIVO e a data
-            de referência ultrapassar o vencimento;
-            False caso contrário.
-
-        Raises:
-            TypeError: Se a data informada for inválida.
-
-        Não altera o estado do empréstimo.
         """
         if hoje is not None and type(hoje) is not date:
             raise TypeError("Informe uma data válida.")
@@ -323,22 +250,10 @@ class Emprestimo:
         """
         Calcula os dias corridos de atraso do empréstimo.
 
-        Args:
-            data_referencia: Data opcional utilizada para
-                calcular o atraso de empréstimos ativos.
-
-        Returns:
-            Número inteiro não negativo de dias em atraso.
-
         Solicitações pendentes ou recusadas retornam zero.
         Para empréstimos ativos, utiliza a data de referência.
         Para empréstimos devolvidos, utiliza a data efetiva
         da devolução, impedindo que o atraso continue aumentando.
-
-        Raises:
-            TypeError: Se a data de referência for inválida.
-
-        Não modifica o empréstimo.
         """
         if data_referencia is not None and type(data_referencia) is not date:
             raise TypeError("A data de referência deve ser uma data válida.")
@@ -357,29 +272,14 @@ class Emprestimo:
         """
         Calcula a multa simulada por atraso na devolução.
 
-        Args:
-            data_referencia: Data opcional de referência
-                para empréstimos ativos.
-
-        Returns:
-            Valor monetário Decimal correspondente a
-            R$ 2,00 por dia corrido de atraso.
-
         O cálculo utiliza dias_atraso(), respeitando
         a data de devolução para empréstimos encerrados.
-
-        Não realiza cobranças nem modifica os registros.
         """
         return self.MULTA_POR_DIA * self.dias_atraso(data_referencia)
 
     def to_dict(self) -> dict:
         """
         Converte os dados do empréstimo em um dicionário.
-
-        Returns:
-            Dicionário com identificação do empréstimo,
-            estudante, material, estado, datas, responsável,
-            dias de atraso e multa simulada.
 
         As datas são convertidas para o formato ISO.
         A multa é convertida para string.

@@ -83,18 +83,6 @@ class ContaAcesso:
         """
         Cria uma conta vinculada a um estudante.
 
-        Args:
-            matricula: Matrícula utilizada como login.
-            senha: Senha em texto puro informada no cadastro.
-
-        Returns:
-            Instância de ContaAcesso com perfil ESTUDANTE,
-            hash, salt e vínculo com a matrícula.
-
-        Raises:
-            ValueError: Se a senha não atender ao tamanho
-                mínimo exigido por gerar_hash().
-
         A senha é convertida em hash antes da criação
         do objeto e não fica armazenada em texto puro.
         """
@@ -111,20 +99,7 @@ class ContaAcesso:
     def gerar_hash(cls, senha: str, salt: str | None = None) -> tuple[str, str]:
         """
         Gera o hash de uma senha utilizando PBKDF2-HMAC.
-
-        Args:
-            senha: Senha em texto puro.
-            salt: Valor hexadecimal opcional.
-                Quando omitido, é gerado aleatoriamente.
-
-        Returns:
-            Tupla contendo o hash e o salt, ambos
-            representados como strings hexadecimais.
-
-        Raises:
-            ValueError: Se a senha não for uma string
-                com pelo menos seis caracteres.
-
+        
         O algoritmo utiliza SHA-256 e a quantidade
         de iterações definida pela classe.
         """
@@ -141,19 +116,6 @@ class ContaAcesso:
     def verificar_senha(self, senha: str) -> bool:
         """
         Verifica se a senha informada corresponde à conta.
-
-        Args:
-            senha: Senha em texto puro a ser verificada.
-
-        Returns:
-            True se o hash calculado corresponder
-            ao hash armazenado; False caso contrário.
-
-        Senhas vazias ou valores que não sejam strings
-        são rejeitados com retorno False.
-
-        A comparação utiliza hmac.compare_digest().
-        Não altera os dados da conta.
         """
         if not isinstance(senha, str) or not senha:
             return False
@@ -196,13 +158,6 @@ class ContaAcesso:
     def identidade(self) -> str:
         """
         Retorna o identificador associado ao perfil.
-
-        Returns:
-            Matrícula do estudante, para contas ESTUDANTE,
-            ou código do grupo, para contas GRUPO.
-
-        Permite identificar a entidade associada
-        à conta autenticada.
         """
         if self.__tipo == self.ESTUDANTE:
             return self.__usuario_matricula

@@ -34,15 +34,6 @@ class Jaleco(Material):
         """
         Inicializa um exemplar de jaleco.
 
-        Args:
-            tipo: Categoria do material.
-            grupo: Grupo responsável pelo exemplar.
-            tamanho: Tamanho do jaleco, obrigatório.
-            codigo: Código individual do exemplar.
-            disponivel: Disponibilidade inicial.
-            id: Identificador no banco de dados.
-            marca: Marca opcional do jaleco.
-
         O tamanho é normalizado para letras maiúsculas
         e validado após a inicialização dos atributos.
         """
@@ -72,12 +63,7 @@ class Jaleco(Material):
     def validar_dados_especificos(self) -> None:
         """
         Verifica se o tamanho do jaleco é permitido.
-
         São aceitos os tamanhos PP, P, M, G, GG e XG.
-
-        Raises:
-            ValueError: Se o tamanho informado não
-                pertencer ao conjunto de tamanhos aceitos.
         """
         if (
             not isinstance(self.__tamanho, str)
@@ -94,9 +80,6 @@ class Jaleco(Material):
 
         Implementa o contrato abstrato de Material,
         permitindo o tratamento polimórfico dos materiais.
-
-        Returns:
-            Dicionário contendo o tamanho do jaleco.
         """
         return {
             "tamanho": self.__tamanho

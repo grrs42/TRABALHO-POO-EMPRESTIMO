@@ -49,26 +49,10 @@ class MaterialFactory:
     ) -> Material:
         """
         Cria ou reconstrói um material de sua classe concreta.
-
-        Args:
-            tipo: Categoria que identifica a especialização.
-            grupo: Grupo responsável pelo material.
-            dados_especificos: Atributos exigidos pela
-                especialização, como tamanho ou modelo.
-            marca: Marca opcional.
-            codigo: Código do exemplar, quando existente.
-            disponivel: Situação de disponibilidade.
-            id: Identificador do registro no banco.
-
         Returns:
             Instância de Calculadora, Jaleco, Livro ou
-            OutroMaterial, conforme a especialização.
-
-        Raises:
-            ValueError: Se a especialização não for reconhecida,
-                os dados não forem um dicionário ou os campos
-                não corresponderem aos esperados.
-
+            OutroMaterial, conforme a especialização
+            
         A validação dos valores específicos é realizada
         pela classe concreta instanciada.
         """

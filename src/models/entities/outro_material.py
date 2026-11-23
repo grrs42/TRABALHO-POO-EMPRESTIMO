@@ -30,15 +30,6 @@ class OutroMaterial(Material):
         """
         Inicializa um exemplar de outro material acadêmico.
 
-        Args:
-            tipo: Categoria do material.
-            grupo: Grupo responsável pelo exemplar.
-            descricao: Descrição obrigatória do material.
-            codigo: Código individual do exemplar.
-            disponivel: Disponibilidade inicial.
-            id: Identificador no banco de dados.
-            marca: Marca opcional do material.
-
         Os atributos comuns são inicializados por Material.
         A descrição é normalizada e validada na criação.
         """
@@ -71,10 +62,6 @@ class OutroMaterial(Material):
 
         A descrição deve ser uma string não vazia,
         desconsiderando espaços nas extremidades.
-
-        Raises:
-            ValueError: Se a descrição estiver ausente,
-                vazia ou não for uma string válida.
         """
         if (
             not isinstance(self.__descricao, str)
@@ -87,12 +74,6 @@ class OutroMaterial(Material):
     def detalhes_especificos(self) -> dict:
         """
         Retorna os atributos específicos do material.
-
-        Implementa o contrato abstrato de Material,
-        permitindo o tratamento polimórfico dos materiais.
-
-        Returns:
-            Dicionário contendo a descrição do exemplar.
         """
         return {
             "descricao": self.__descricao

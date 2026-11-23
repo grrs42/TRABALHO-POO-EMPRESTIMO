@@ -104,9 +104,6 @@ class EmprestimosRepository:
     def select_emprestimo(self, emprestimo_id: int) -> Emprestimo | None:
         """
         Consulta um empréstimo pelo identificador
-        Returns:
-            Objeto Emprestimo reconstruído a partir
-            dos dados do banco, quando encontrado.
 
         Utiliza a consulta SQL compartilhada e o
         método auxiliar __montar() para reconstrução.

@@ -27,17 +27,6 @@ class Material(ABC):
         id: int | None = None,
         marca: str | None = None
     ) -> None:
-        """
-        Inicializa os atributos compartilhados pelos materiais.
-
-        Args:
-            tipo: Categoria à qual o material pertence.
-            grupo: Organização responsável pelo exemplar.
-            codigo: Código individual, quando já gerado.
-            disponivel: Situação inicial de disponibilidade.
-            id: Identificador do registro no banco de dados.
-            marca: Marca opcional do material.
-        """
         self.__id = id
         self.__codigo = codigo
         self.__tipo = tipo
@@ -73,25 +62,12 @@ class Material(ABC):
     def gerar_codigo(sigla: str, numero: int) -> str:
         """
         Monta o código individual de um exemplar.
-
-        Args:
-            sigla: Sigla da categoria do material.
-            numero: Número sequencial do exemplar.
-
-        Returns:
-            Código no formato SIGLA-NNN, como JAL-001.
         """
         return f"{sigla}-{numero:03d}"
 
     def verificar_disponibilidade(self) -> bool:
         """
         Consulta a disponibilidade registrada no objeto.
-
-        Returns:
-            True se o exemplar estiver disponível;
-            False caso contrário.
-
-        Não realiza consultas ao banco de dados.
         """
         return self.__disponivel
 
@@ -110,10 +86,6 @@ class Material(ABC):
         """
         Valida os atributos próprios da especialização.
         Deve ser implementado pelas subclasses concretas.
-
-        Raises:
-            ValueError: Quando algum atributo específico
-                não atende às regras da categoria.
         """
         pass
 
@@ -121,9 +93,6 @@ class Material(ABC):
     def detalhes_especificos(self) -> dict:
         """
         Obtém os atributos específicos do material.
-
-        Returns:
-            Dicionário com os campos próprios da subclasse.
         """
         pass
 
@@ -132,10 +101,7 @@ class Material(ABC):
         Converte os dados do material em um dicionário.
 
         Combina atributos comuns e específicos, utilizando
-        o método polimórfico detalhes_especificos().
-
-        Returns:
-            Dicionário com os dados do exemplar.
+        o método polimórfico detalhes_especificos()
         """
         return {
             "id": self.__id,
@@ -149,7 +115,6 @@ class Material(ABC):
         }
 
     def __repr__(self) -> str:
-        """Retorna uma representação textual resumida do material."""
         return (
             f"Material(id={self.__id}, "
             f"codigo='{self.__codigo}', "
